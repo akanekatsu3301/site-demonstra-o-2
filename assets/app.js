@@ -21,15 +21,47 @@ if (stage && cube) {
   if (matchMedia('(pointer: coarse)').matches) {
     hint.textContent = 'ARRASTE O DEDO. MUDE A PERSPECTIVA. ↗';
   }
+  // Touch events keep finger movement independent of pointer-event support.
+  let lastTouchTime = 0;
+  stage.addEventListener('touchstart', e => {
+    if (drag || e.touches.length !== 1) return;
+    if (e.cancelable) e.preventDefault();
+    const touch = e.changedTouches[0];
+    lastTouchTime = Date.now();
+    suppressClick = false;
+    drag = { id: touch.identifier, x: touch.clientX, y: touch.clientY, rx, ry, touch: true, moved: false };
+    stage.classList.add('dragging');
+  }, { passive: false });
+  stage.addEventListener('touchmove', e => {
+    if (!drag || !drag.touch) return;
+    if (e.cancelable) e.preventDefault();
+    const touch = Array.from(e.touches).find(t => t.identifier === drag.id);
+    if (!touch) return;
+    const dx = touch.clientX - drag.x, dy = touch.clientY - drag.y;
+    if (Math.hypot(dx, dy) > 5) drag.moved = true;
+    rotate(drag.rx - dy * 0.4, drag.ry + dx * 0.4);
+  }, { passive: false });
+  function finishTouch(e) {
+    if (!drag || !drag.touch) return;
+    if (!Array.from(e.changedTouches).some(t => t.identifier === drag.id)) return;
+    if (e.cancelable) e.preventDefault();
+    const tap = !drag.moved && e.type === 'touchend';
+    drag = null;
+    lastTouchTime = Date.now();
+    stage.classList.remove('dragging');
+    if (tap) rotate(rx, ry + 90);
+  }
+  stage.addEventListener('touchend', finishTouch, { passive: false });
+  stage.addEventListener('touchcancel', finishTouch, { passive: false });
   stage.addEventListener('pointerdown', e => {
-    if (e.pointerType === 'mouse' || !e.isPrimary || drag) return;
+    if (e.pointerType !== 'pen' || !e.isPrimary || drag) return;
     suppressClick = false;
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY, rx, ry };
     stage.setPointerCapture(e.pointerId);
     stage.classList.add('dragging');
   });
   stage.addEventListener('pointermove', e => {
-    if (drag && drag.id === e.pointerId) {
+    if (drag && !drag.touch && drag.id === e.pointerId) {
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (Math.hypot(dx, dy) > 5) suppressClick = true;
       rotate(drag.rx - dy * 0.4, drag.ry + dx * 0.4);
@@ -41,7 +73,7 @@ if (stage && cube) {
       35 + (e.clientX - r.left - r.width / 2) / 7);
   });
   function finishDrag(e) {
-    if (!drag || drag.id !== e.pointerId) return;
+    if (!drag || drag.touch || drag.id !== e.pointerId) return;
     if (e.type === 'pointercancel') suppressClick = true;
     drag = null;
     stage.classList.remove('dragging');
@@ -54,6 +86,7 @@ if (stage && cube) {
     if (e.pointerType === 'mouse' && !drag) rotate(-22, 35);
   });
   stage.addEventListener('click', e => {
+    if (e.detail !== 0 && Date.now() - lastTouchTime < 800) return;
     if (suppressClick && e.detail !== 0) { suppressClick = false; return; }
     rotate(rx, ry + 90);
   });
@@ -65,3 +98,4 @@ if (stage && cube) {
     }
   });
 }
+
