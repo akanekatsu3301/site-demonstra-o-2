@@ -1,13 +1,57 @@
-﻿const templates=[{id:'essencial',name:'Essencial',category:'Institucional',style:'',brand:'ESSENCIAL',title:'Sua marca. Sua essência.',description:'Uma presença digital clara e elegante para apresentar sua empresa, seus serviços e sua visão.',items:['Sobre a empresa','Nossos serviços','Nossa visão']},{id:'perspectiva',name:'Perspectiva',category:'Portfólio',style:'light',brand:'PERSPECTIVA',title:'Ideias que ganham forma.',description:'Um espaço para apresentar projetos, processos e a personalidade de quem cria.',items:['Identidade visual','Design de produto','Direção criativa']},{id:'studio',name:'Studio',category:'Criativo',style:'agency',brand:'STUDIO®',title:'Criatividade sem limites.',description:'Uma proposta expressiva para estúdios, agências e marcas que querem abrir novas possibilidades.',items:['Estratégia','Design','Experiências']},{id:'objeto',name:'Objeto',category:'E-commerce',style:'shop',brand:'OBJETO',title:'O essencial do cotidiano.',description:'Uma vitrine de produtos com foco nas formas, nos materiais e nos pequenos detalhes.',items:['Coleção de objetos','Novidades','Seleção de design']},{id:'pulso',name:'Pulso',category:'Dashboard',style:'dashboard',brand:'PULSO / VISÃO GERAL',title:'Tudo sob uma nova perspectiva.',description:'Uma proposta de painel para organizar indicadores e acompanhar informações. Os números abaixo são ilustrativos.',items:['Visitas: 2.480','Projetos: 12','Conversão: 3,2%']},{id:'editorial',name:'Editorial',category:'Criativo',style:'editorial',brand:'EDITORIAL — VOL. 01',title:'Histórias que ficam.',description:'Uma experiência editorial que dá espaço às ideias, à leitura e a novas perspectivas.',items:['Design e cultura','Conversas','Novas perspectivas']}];
-let favorites=[];try{const saved=JSON.parse(localStorage.getItem('forma-favorites')||'[]');if(Array.isArray(saved))favorites=saved.filter(id=>templates.some(t=>t.id===id))}catch{}let category='Todos';const categories=['Todos',...new Set(templates.map(t=>t.category))];
-function card(t){return `<article class="card"><div class="thumbnail"><div class="mini ${t.style}"><div class="miniheader"><b>${t.brand}</b><span>MENU ☰</span></div><div class="minititle">${t.title}</div><div class="miniline"></div><div class="miniline" style="width:30%"></div>${t.style==='dashboard'?'<div class="bars"><i style="height:35%"></i><i style="height:68%"></i><i style="height:52%"></i><i style="height:88%"></i><i style="height:70%"></i></div>':'<div class="minibtn"></div><div class="miniart"></div>'}</div><span class="tag">${t.category}</span></div><div class="cardinfo"><div><h3>${t.name}</h3><p>${t.category} · Template de demonstração</p></div><div class="card-actions"><button class="favorite" data-favorite="${t.id}" aria-label="${favorites.includes(t.id)?'Remover':'Salvar'} ${t.name} dos favoritos" aria-pressed="${favorites.includes(t.id)}">${favorites.includes(t.id)?'★':'☆'}</button><button class="open" data-preview="${t.id}" aria-label="Abrir prévia de ${t.name}">↗</button></div></div></article>`}
-function render(){const visible=templates.filter(t=>category==='Todos'||t.category===category);['allGrid'].forEach(id=>document.getElementById(id) && (document.getElementById(id).innerHTML=visible.map(card).join('')));['allFilters'].forEach(id=>document.getElementById(id) && (document.getElementById(id).innerHTML=categories.map(c=>`<button class="filter ${category===c?'active':''}" data-category="${c}" aria-pressed="${category===c}">${c}</button>`).join('')));if(document.getElementById('favoritesGrid'))document.getElementById('favoritesGrid').innerHTML=templates.filter(t=>favorites.includes(t.id)).map(card).join('');if(document.getElementById('empty'))document.getElementById('empty').hidden=favorites.length>0}render();
-document.addEventListener('click',e=>{const filter=e.target.closest('[data-category]');if(filter){category=filter.dataset.category;render();const updated=document.querySelector(`#${filter.parentElement.id} [data-category="${category}"]`);updated?.focus()}const fav=e.target.closest('[data-favorite]');if(fav){const id=fav.dataset.favorite;favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];try{localStorage.setItem('forma-favorites',JSON.stringify(favorites))}catch{}const gridId=fav.closest('.grid').id;render();document.querySelector(`#${gridId} [data-favorite="${id}"]`)?.focus()}const open=e.target.closest('[data-preview]');if(open){const t=templates.find(t=>t.id===open.dataset.preview);document.getElementById('previewTitle').textContent=t.name+' / '+t.category;const demo=document.getElementById('demo');demo.className='demo '+t.style;demo.innerHTML=`<div class="eyebrow">${t.brand}</div><h2>${t.title}</h2><p>${t.description}</p><div class="demoboxes">${t.items.map(i=>`<div class="demobox">${i} ↗</div>`).join('')}</div>`;document.getElementById('preview').showModal()}});
-const dialog=document.getElementById('preview');document.getElementById('closePreview').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
+document.documentElement.classList.add('js-enabled');
+const site=window.VORTEK_SITE, templates=site.templates;
+let favorites=[];try{const saved=JSON.parse(localStorage.getItem('vortek-favorites')||localStorage.getItem('forma-favorites')||'[]');if(Array.isArray(saved))favorites=saved.filter(id=>templates.some(t=>t.id===id))}catch{}let category='Todos';const categories=['Todos',...new Set(templates.map(t=>t.category))];
+function card(t){return window.VORTEK_RENDER.card(t,favorites)}
+function render(){const visible=templates.filter(t=>category==='Todos'||t.category===category);if(document.getElementById('featuredGrid'))document.getElementById('featuredGrid').innerHTML=templates.filter(t=>['essencial','perspectiva','studio'].includes(t.id)).map(card).join('');['allGrid'].forEach(id=>document.getElementById(id) && (document.getElementById(id).innerHTML=visible.map(card).join('')));['allFilters'].forEach(id=>document.getElementById(id) && (document.getElementById(id).innerHTML=categories.map(c=>`<button class="filter ${category===c?'active':''}" data-category="${c}" aria-pressed="${category===c}">${c}</button>`).join('')));if(document.getElementById('favoritesGrid'))document.getElementById('favoritesGrid').innerHTML=templates.filter(t=>favorites.includes(t.id)).map(card).join('');if(document.getElementById('empty'))document.getElementById('empty').hidden=favorites.length>0}render();
+document.addEventListener('click',e=>{const filter=e.target.closest('[data-category]');if(filter){const filterGroup=filter.parentElement.id;category=filter.dataset.category;render();const updated=document.querySelector(`#${filterGroup} [data-category="${category}"]`);updated?.focus()}const fav=e.target.closest('[data-favorite]');if(fav){const id=fav.dataset.favorite;favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];try{localStorage.setItem('vortek-favorites',JSON.stringify(favorites))}catch{}const gridId=fav.closest('.grid').id;render();document.querySelector(`#${gridId} [data-favorite="${id}"]`)?.focus()}const open=e.target.closest('[data-preview]');if(open){const t=templates.find(t=>t.id===open.dataset.preview);document.getElementById('previewTitle').textContent=t.name+' / '+t.category;const demo=document.getElementById('demo');demo.className='demo '+t.style;demo.innerHTML=`<div class="eyebrow">${t.brand}</div><h2>${t.title}</h2><p>${t.description}</p><div class="demoboxes">${t.items.map(i=>`<div class="demobox">${i} ↗</div>`).join('')}</div>`;document.getElementById('preview').showModal()}});
+const dialog=document.getElementById('preview');document.getElementById('closePreview')?.addEventListener('click',()=>dialog?.close());dialog?.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close()}});
 const stage = document.getElementById('stage');
 const cube = document.getElementById('cube');
 let rx = -22, ry = 35;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+// O mesmo conteúdo é pré-renderizado no build para permanecer disponível sem JS.
+document.querySelectorAll('[data-content]').forEach(el=>{
+  const renderer=window.VORTEK_RENDER?.[el.dataset.content];
+  if(renderer)el.innerHTML=renderer(site);
+});
+const contact=window.VORTEK_CONTACT;
+document.querySelectorAll('[data-whatsapp]').forEach(a=>{
+  a.href=contact.link(site.whatsapp,site.message);a.target='_blank';a.rel='noopener noreferrer';
+});
+document.querySelectorAll('[data-contact-label]').forEach(el=>el.textContent=site.whatsappLabel);
+const menu=document.querySelector('.menu-toggle'),nav=document.getElementById('site-nav');
+function closeMenu(){menu?.setAttribute('aria-expanded','false');nav?.classList.remove('open');}
+menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open);});
+nav?.addEventListener('click',e=>{if(e.target.closest('a'))closeMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape' && menu?.getAttribute('aria-expanded')==='true'){closeMenu();menu.focus();}});
+const quoteForm=document.getElementById('quote-form');
+if(quoteForm){
+  const select=quoteForm.elements.service;
+  for(const service of site.services){if(![...select.options].some(o=>o.value===service.name)){const option=document.createElement('option');option.value=option.textContent=service.name;select.append(option);}}
+  if(![...select.options].some(o=>o.value==='Ainda preciso de orientação')){const option=document.createElement('option');option.value=option.textContent='Ainda preciso de orientação';select.append(option);}
+  let quote='';
+  quoteForm.addEventListener('input',()=>{document.getElementById('quote-result').hidden=true;});
+  quoteForm.addEventListener('submit',e=>{
+    e.preventDefault();if(!quoteForm.reportValidity())return;
+    try{
+      quote=contact.quote(Object.fromEntries(new FormData(quoteForm)),templates.filter(t=>favorites.includes(t.id)).map(t=>t.name));
+      document.getElementById('quote-whatsapp').href=contact.link(site.whatsapp,quote);
+      document.getElementById('quote-status').textContent='Seu pedido está pronto. Abra o WhatsApp para revisar e enviar a mensagem à Vortek.';
+      document.getElementById('copy-status').textContent='';document.getElementById('quote-result').hidden=false;
+    }catch(error){document.getElementById('quote-result').hidden=false;document.getElementById('quote-status').textContent=error.message;document.getElementById('quote-whatsapp').removeAttribute('href');}
+  });
+  document.getElementById('copy-quote')?.addEventListener('click',async()=>{
+    try{if(!quote)return;await navigator.clipboard.writeText(quote);document.getElementById('copy-status').textContent='Mensagem copiada. Você pode colar na conversa com a Vortek.';}
+    catch{document.getElementById('copy-status').textContent='A cópia não está disponível neste navegador. Use o botão para abrir o WhatsApp.';}
+  });
+  document.addEventListener('click',e=>{const a=e.target.closest('[data-service]');if(a){select.value=a.dataset.service;document.getElementById('quote-result').hidden=true;}});
+}
+dialog?.addEventListener('close',()=>document.getElementById('previewQuote')?.remove());
+document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-preview]');if(!button)return;
+  document.getElementById('previewQuote')?.remove();
+  const a=document.createElement('a');a.id='previewQuote';a.className='btn primary demo-cta';a.href='index.html#orcamento';a.textContent='Quero conversar sobre meu site ↗';document.getElementById('demo').append(a);
+});
 function rotate(x, y) {
   rx = x; ry = y;
   cube.style.setProperty('--rx', x + 'deg');
